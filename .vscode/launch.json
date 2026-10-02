@@ -1,0 +1,20 @@
+{
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "OneDrive-Dateien herunterladen",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/onedrive/src/download_onedrive_files.py",
+            "console": "integratedTerminal",
+            "args": [
+                "--input",
+                "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml",
+                "--target-dir",
+                "${workspaceFolder}/onedrive/workspace/target_dir",
+                "--output",
+                "${workspaceFolder}/onedrive/workspace/target_paths.yaml"
+            ]
+        }
+    ]
+}
