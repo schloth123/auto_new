@@ -11,7 +11,7 @@
                 "--input",
                 "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml",
                 "--target-dir",
-                "${workspaceFolder}/onedrive/workspace/target_dir",
+                "${workspaceFolder}/onedrive/workspace/local_target_dir",
                 "--output",
                 "${workspaceFolder}/onedrive/workspace/target_paths.yaml"
             ]

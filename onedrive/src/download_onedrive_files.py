@@ -118,7 +118,7 @@ def download_files(links: list[str], target_dir: Path) -> list[dict[str, str]]:
             mappings.append(
                 {
                     "one_drive_path": original_url,
-                    "target_path": str(target_path.relative_to(PROJECT_DIR)).replace("\\", "/"),
+                    "local_target_path": str(target_path.relative_to(PROJECT_DIR)).replace("\\", "/"),
                 }
             )
             print(f"Heruntergeladen: {original_url} -> {target_path}")
