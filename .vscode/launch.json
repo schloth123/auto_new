@@ -40,6 +40,16 @@
             "args": [
                 "${workspaceFolder}/onedrive/workspace/onedrive_share_paths.yaml"
             ]
+        },
+        {
+            "name": "ISIN-Kurse nach EUR umrechnen",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/finance/src/isin_prices.py",
+            "console": "integratedTerminal",
+            "args": [
+                "${workspaceFolder}/finance/etc/input_isin.yaml"
+            ]
         }
     ]
 }
