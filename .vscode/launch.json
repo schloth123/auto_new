@@ -9,8 +9,8 @@
             "console": "integratedTerminal",
             "args": [
                 "--input",
-                // "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml",
-                "${workspaceFolder}/onedrive/etc/one_drive_paths_simulation.yaml",
+                "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml", // production
+                // "${workspaceFolder}/onedrive/etc/one_drive_paths_simulation.yaml", // simulation
                 "--target-dir",
                 "${workspaceFolder}/onedrive/workspace/local_target_dir",
                 "--output",
@@ -25,7 +25,8 @@
             "console": "integratedTerminal",
             "args": [
                 "--folder",
-                "${env:OneDrive}/Share/Schaeffler",
+                "${env:OneDrive}/Share/Belege_Förderungen/Bafa_Dach", // production
+                // "${env:OneDrive}/Share/Schaeffler", // simulation
                 "--permission",
                 "view"
             ]

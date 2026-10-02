@@ -41,18 +41,14 @@ def find_onedrive_root(folder: Path, configured_root: Path | None) -> Path:
     )
 
 
-def acquire_access_token(client_id: str) -> str:
-    """Authenticate interactively using Microsoft's device-code flow."""
+def acquire_access_token() -> str:
+    """Authenticate interactively using Microsoft's localhost browser flow."""
     app = msal.PublicClientApplication(
-        client_id=client_id,
+        client_id=DEFAULT_CLIENT_ID,
         authority="https://login.microsoftonline.com/common",
     )
-    flow = app.initiate_device_flow(scopes=GRAPH_SCOPE)
-    if "user_code" not in flow:
-        raise RuntimeError(f"Microsoft-Anmeldung konnte nicht gestartet werden: {flow}")
-
-    print(flow["message"], file=sys.stderr)
-    result = app.acquire_token_by_device_flow(flow)
+    print("Microsoft-Anmeldung wird im Browser gestartet.", file=sys.stderr)
+    result = app.acquire_token_interactive(scopes=GRAPH_SCOPE, prompt="select_account")
     if "access_token" not in result:
         message = result.get("error_description", result.get("error", "Unbekannter Anmeldefehler"))
         raise RuntimeError(f"Microsoft-Anmeldung fehlgeschlagen: {message}")
@@ -111,11 +107,6 @@ def main() -> int:
         help="Link-Berechtigung: view (kann anzeigen) oder edit (kann bearbeiten)",
     )
     parser.add_argument(
-        "--client-id",
-        default=os.environ.get("ONEDRIVE_CLIENT_ID", DEFAULT_CLIENT_ID),
-        help="Optionale eigene Client-ID; Standard ist die Microsoft-Graph-PowerShell-App",
-    )
-    parser.add_argument(
         "--onedrive-root",
         type=Path,
         help="Lokaler OneDrive-Synchronisierungsstamm; normalerweise automatisch erkannt",
@@ -133,7 +124,7 @@ def main() -> int:
 
     try:
         root = find_onedrive_root(args.folder, args.onedrive_root)
-        access_token = acquire_access_token(args.client_id)
+        access_token = acquire_access_token()
         links = create_links(args.folder.resolve(), root, args.permission, access_token)
         write_links(args.output, links)
     except (OSError, RuntimeError, ValueError) as error:
