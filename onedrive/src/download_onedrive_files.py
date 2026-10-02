@@ -3,11 +3,14 @@
 from __future__ import annotations
 
 import argparse
+import base64
 import re
 import shutil
+import sys
 from pathlib import Path
 from urllib.parse import parse_qsl, unquote, urlencode, urlparse, urlunparse
 
+import msal
 import requests
 import yaml
 
@@ -15,6 +18,9 @@ import yaml
 PROJECT_DIR = Path(__file__).resolve().parents[2]
 WORKSPACE_DIR = Path(__file__).resolve().parents[1] / "workspace"
 DOWNLOAD_TIMEOUT = (15, 120)
+GRAPH_API_URL = "https://graph.microsoft.com/v1.0"
+GRAPH_SCOPE = ["Files.ReadWrite"]
+DEFAULT_CLIENT_ID = "14d82eec-204b-4c2f-b7e8-296a70dab67e"
 
 
 def add_download_parameter(url: str) -> str:
@@ -23,6 +29,25 @@ def add_download_parameter(url: str) -> str:
     query = dict(parse_qsl(parsed_url.query, keep_blank_values=True))
     query["download"] = "1"
     return urlunparse(parsed_url._replace(query=urlencode(query)))
+
+
+def acquire_access_token() -> str:
+    """Authenticate interactively using Microsoft's localhost browser flow."""
+    app = msal.PublicClientApplication(
+        client_id=DEFAULT_CLIENT_ID,
+        authority="https://login.microsoftonline.com/common",
+    )
+    print("Microsoft-Anmeldung wird im Browser gestartet.", file=sys.stderr)
+    result = app.acquire_token_interactive(scopes=GRAPH_SCOPE, prompt="select_account")
+    if "access_token" not in result:
+        message = result.get("error_description", result.get("error", "Unbekannter Anmeldefehler"))
+        raise RuntimeError(f"Microsoft-Anmeldung fehlgeschlagen: {message}")
+    return result["access_token"]
+
+
+def graph_share_id(url: str) -> str:
+    encoded_url = base64.urlsafe_b64encode(url.encode("utf-8")).decode("ascii").rstrip("=")
+    return f"u!{encoded_url}"
 
 
 def filename_from_response(response: requests.Response, fallback: str) -> str:
@@ -93,9 +118,13 @@ def unique_target_path(target_dir: Path, filename: str) -> Path:
     return target_path
 
 
-def download_files(links: list[str], target_dir: Path) -> dict[str, dict[str, str]]:
+def download_files(
+    links: list[str],
+    target_dir: Path,
+) -> dict[str, dict[str, str]]:
     target_dir.mkdir(parents=True, exist_ok=True)
     mappings: dict[str, dict[str, str]] = {}
+    access_token: str | None = None
 
     for index, original_url in enumerate(links, start=1):
         try:
@@ -107,6 +136,28 @@ def download_files(links: list[str], target_dir: Path) -> dict[str, dict[str, st
                 headers={"User-Agent": "onedrive-file-downloader/1.0"},
             )
             response.raise_for_status()
+            content_type = response.headers.get("Content-Type", "").split(";", maxsplit=1)[0].strip().lower()
+            if content_type == "text/html":
+                response.close()
+                if access_token is None:
+                    access_token = acquire_access_token()
+                share_id = graph_share_id(original_url)
+                response = requests.get(
+                    f"{GRAPH_API_URL}/shares/{share_id}/driveItem/content",
+                    allow_redirects=True,
+                    stream=True,
+                    timeout=DOWNLOAD_TIMEOUT,
+                    headers={
+                        "Authorization": f"Bearer {access_token}",
+                        "Prefer": "redeemSharingLink",
+                    },
+                )
+                response.raise_for_status()
+                content_type = response.headers.get("Content-Type", "").split(";", maxsplit=1)[0].strip().lower()
+                if content_type == "text/html":
+                    response.close()
+                    raise RuntimeError(f"OneDrive lieferte statt der Datei erneut HTML für {original_url}")
+
             filename = filename_from_response(response, f"download_{index}")
             target_path = unique_target_path(target_dir, filename)
 
@@ -120,8 +171,11 @@ def download_files(links: list[str], target_dir: Path) -> dict[str, dict[str, st
                 "local_target_path": str(target_path.relative_to(PROJECT_DIR)).replace("\\", "/"),
             }
             print(f"Heruntergeladen: {original_url} -> {target_path}")
-        except requests.RequestException as error:
-            print(f"Fehler beim Herunterladen von {original_url}: {error}")
+        except (requests.RequestException, RuntimeError) as error:
+            details = str(error)
+            if isinstance(error, requests.HTTPError) and error.response is not None:
+                details = f"{details} - {error.response.text}"
+            print(f"Fehler beim Herunterladen von {original_url}: {details}")
 
     return mappings
 

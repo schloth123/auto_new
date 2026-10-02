@@ -9,7 +9,8 @@
             "console": "integratedTerminal",
             "args": [
                 "--input",
-                "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml",
+                // "${workspaceFolder}/onedrive/etc/one_drive_paths.yaml",
+                "${workspaceFolder}/onedrive/etc/one_drive_paths_simulation.yaml",
                 "--target-dir",
                 "${workspaceFolder}/onedrive/workspace/local_target_dir",
                 "--output",
