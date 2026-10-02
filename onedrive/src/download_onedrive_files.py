@@ -93,9 +93,9 @@ def unique_target_path(target_dir: Path, filename: str) -> Path:
     return target_path
 
 
-def download_files(links: list[str], target_dir: Path) -> list[dict[str, str]]:
+def download_files(links: list[str], target_dir: Path) -> dict[str, dict[str, str]]:
     target_dir.mkdir(parents=True, exist_ok=True)
-    mappings = []
+    mappings: dict[str, dict[str, str]] = {}
 
     for index, original_url in enumerate(links, start=1):
         try:
@@ -115,12 +115,10 @@ def download_files(links: list[str], target_dir: Path) -> list[dict[str, str]]:
                     if chunk:
                         file.write(chunk)
 
-            mappings.append(
-                {
-                    "one_drive_path": original_url,
-                    "local_target_path": str(target_path.relative_to(PROJECT_DIR)).replace("\\", "/"),
-                }
-            )
+            mappings[target_path.name] = {
+                "one_drive_path": original_url,
+                "local_target_path": str(target_path.relative_to(PROJECT_DIR)).replace("\\", "/"),
+            }
             print(f"Heruntergeladen: {original_url} -> {target_path}")
         except requests.RequestException as error:
             print(f"Fehler beim Herunterladen von {original_url}: {error}")
@@ -128,7 +126,7 @@ def download_files(links: list[str], target_dir: Path) -> list[dict[str, str]]:
     return mappings
 
 
-def write_mappings(output_path: Path, mappings: list[dict[str, str]]) -> None:
+def write_mappings(output_path: Path, mappings: dict[str, dict[str, str]]) -> None:
     with output_path.open("w", encoding="utf-8") as file:
         yaml.safe_dump(mappings, file, allow_unicode=False, sort_keys=False)
 
