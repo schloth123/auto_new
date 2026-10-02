@@ -30,6 +30,16 @@
                 "--permission",
                 "view"
             ]
+        },
+        {
+            "name": "YAML nach CSV konvertieren",
+            "type": "debugpy",
+            "request": "launch",
+            "program": "${workspaceFolder}/onedrive/src/yaml_to_csv.py",
+            "console": "integratedTerminal",
+            "args": [
+                "${workspaceFolder}/onedrive/workspace/onedrive_share_paths.yaml"
+            ]
         }
     ]
 }
