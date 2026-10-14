@@ -91,7 +91,7 @@ def fetch_isin(isin: str) -> dict[str, Any]:
     if not name:
         raise ValueError(f"Kein Name für {isin} ({symbol}) verfügbar.")
 
-    return {"isin": isin, "name": name, "current rate": f"{euro_rate:.8f}", "currency": "EUR"}
+    return {"isin": isin, "name": name, "current rate": f"{euro_rate:.8f}".replace(".", ","), "currency": "EUR"}
 
 
 def create_csv(input_path: Path) -> Path:
@@ -109,7 +109,7 @@ def create_csv(input_path: Path) -> Path:
 
     OUTPUT_PATH.parent.mkdir(parents=True, exist_ok=True)
     with OUTPUT_PATH.open("w", encoding="utf-8-sig", newline="") as output_file:
-        writer = csv.DictWriter(output_file, fieldnames=CSV_COLUMNS)
+        writer = csv.DictWriter(output_file, fieldnames=CSV_COLUMNS, delimiter=";")
         writer.writeheader()
         writer.writerows(rows)
     return OUTPUT_PATH
